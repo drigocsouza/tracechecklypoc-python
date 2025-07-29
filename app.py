@@ -1,5 +1,7 @@
 import logging
 import os
+import random
+import time
 from flask import Flask, request
 from opentelemetry import trace
 from opentelemetry.sdk.resources import Resource
@@ -7,6 +9,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, SpanExporter, SpanExportResult
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
+from opentelemetry.trace import Status, StatusCode
 
 # Detailed logging
 logging.basicConfig(
@@ -63,12 +66,26 @@ def ping():
     logging.debug("Headers: %s", dict(request.headers))
     try:
         with tracer.start_as_current_span("ping-span") as span:
+            # Simulate random delay (50% chance)
+            if random.random() < 0.5:
+                time.sleep(2)  # 2 seconds delay
+                span.set_attribute("simulated.delay", "2s")
+            # Simulate random error (30% chance)
+            if random.random() < 0.3:
+                span.set_status(Status(StatusCode.ERROR, "Simulated error"))
+                raise Exception("Simulated error for tracing")
             span.set_attribute("custom.attribute", "example-value")
             logging.info("Span 'ping-span' created. Waiting for automatic export by BatchSpanProcessor.")
             return "pong", 200
     except Exception as e:
         logging.exception("Error creating/exporting span at /ping: %s", e)
         return "internal error", 500
+
+@app.route("/fail")
+def fail():
+    with tracer.start_as_current_span("fail-span") as span:
+        span.set_status(Status(StatusCode.ERROR, "Intentional fail"))
+        raise Exception("Intentional failure for trace simulation")
 
 if __name__ == "__main__":
     logging.info("Running app on port 8000")

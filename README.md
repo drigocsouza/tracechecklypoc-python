@@ -8,6 +8,7 @@ Proof of concept project for instrumenting Python APIs with OpenTelemetry and Ch
 - [Installation](#installation)
 - [Environment Variables Setup](#environment-variables-setup)
 - [Running the API](#running-the-api)
+- [Simulating Trace Problems](#simulating-trace-problems)
 - [OpenTelemetry Instrumentation](#opentelemetry-instrumentation)
 - [Testing](#testing)
 - [Deployment](#deployment)
@@ -64,6 +65,16 @@ With the environment variable set, run:
 python app.py
 ```
 The API will be available at `http://localhost:8000`.
+
+## Simulating Trace Problems
+
+The `/ping` endpoint will randomly:
+- Return a simulated error (HTTP 500) ~30% of the time.
+- Introduce a delay (~2 seconds) ~50% of the time.
+
+This allows you to see both latency and error traces in Checkly.
+
+A `/fail` endpoint is also available, which always raises an error and can be used to generate error traces intentionally.
 
 ## OpenTelemetry Instrumentation
 
